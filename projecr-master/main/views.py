@@ -20,6 +20,7 @@ class EmployeeListCreateView(APIView):
         return Response(serializer_class.data)
 
 
+# class EmployeeList(APIView):
 class EmployeeList(APIView):
     def get(self, request, pk, format=None):
         try:
@@ -29,17 +30,12 @@ class EmployeeList(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         serializer = EmployeeSerializer(employee)
-
+        
         projects = Project.objects.filter(assigned_employees=employee)
         project_serializer = ProjectSerializer(projects, many=True)
 
-        project_managers = set()
-        for project in projects:
-            project_managers.update(ProjectManager.objects.filter(projects=project))
-
-        projectManager_serializer = ProjectManagerSerializer(
-            list(project_managers), many=True
-        )
+        project_managers = ProjectManager.objects.filter(projects__in=projects).distinct()
+        projectManager_serializer = ProjectManagerSerializer(project_managers, many=True)
 
         data = {
             "employee": serializer.data,
@@ -47,6 +43,8 @@ class EmployeeList(APIView):
             "project_manager": projectManager_serializer.data,
         }
         return Response(data)
+
+     
 
 
 class LoginView(APIView):
